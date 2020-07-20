@@ -8,14 +8,14 @@ var vnode = {
 
 var vueEl = document.getElementById('app');
 
-console.log(vueEl);
+mount(vnode, vueEl);
 
-var el = document.createElement(vnode.tag);
-for (const key in vnode.props) {
-  el.setAttribute(key, vnode.props[key]);
-};
-el.textContent = vnode.children;
+function mount(vnode, el) {
+  var vnodeEl = document.createElement(vnode.tag);
+  for (const key in vnode.props) {
+    vnodeEl.setAttribute(key, vnode.props[key]);
+  };
+  vnodeEl.textContent = vnode.children;
 
-vueEl.appendChild(el);
-
-console.log('loading');
+  el.appendChild(vnodeEl);
+}
