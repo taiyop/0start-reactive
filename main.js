@@ -1,9 +1,15 @@
 var childNode = {
-  tag: 'div',
+  tag: 'h1',
   props: {
     class: 'title'
   },
   children: 'hello world'
+};
+
+var childNode2 = {
+  tag: 'span',
+  props: null,
+  children: 'I am taiyop'
 };
 
 var vnode = {
@@ -11,7 +17,7 @@ var vnode = {
   props: {
     class: 'container'
   },
-  children: [childNode]
+  children: [childNode, childNode2]
 };
 
 var vueEl = document.getElementById('app');
