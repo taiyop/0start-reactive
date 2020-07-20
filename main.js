@@ -1,9 +1,17 @@
+var childNode = {
+  tag: 'div',
+  props: {
+    class: 'title'
+  },
+  children: 'hello world'
+};
+
 var vnode = {
   tag: 'div',
   props: {
     class: 'container'
   },
-  children: 'hello world'
+  children: [childNode]
 };
 
 var vueEl = document.getElementById('app');
@@ -15,7 +23,13 @@ function mount(vnode, el) {
   for (const key in vnode.props) {
     vnodeEl.setAttribute(key, vnode.props[key]);
   };
-  vnodeEl.textContent = vnode.children;
+  if (typeof vnode.children === 'string') {
+    vnodeEl.textContent = vnode.children
+  } else {
+    vnode.children.forEach(child => {
+      mount(child, vnodeEl) // Recursively mount the children
+    })
+  }
 
   el.appendChild(vnodeEl);
 }
