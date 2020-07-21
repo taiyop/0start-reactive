@@ -12,6 +12,12 @@ var childNode2 = {
   children: 'I am taiyop'
 };
 
+var childNode3 = {
+  tag: 'p',
+  props: null,
+  children: 'Thank you for your time!'
+};
+
 var vnode = {
   tag: 'div',
   props: {
@@ -25,17 +31,76 @@ var vueEl = document.getElementById('app');
 mount(vnode, vueEl);
 
 function mount(vnode, el) {
-  var vnodeEl = document.createElement(vnode.tag);
+  vnode.el = document.createElement(vnode.tag);
   for (const key in vnode.props) {
-    vnodeEl.setAttribute(key, vnode.props[key]);
+    vnode.el.setAttribute(key, vnode.props[key]);
   };
   if (typeof vnode.children === 'string') {
-    vnodeEl.textContent = vnode.children
+    vnode.el.textContent = vnode.children
   } else {
     vnode.children.forEach(child => {
-      mount(child, vnodeEl) // Recursively mount the children
+      mount(child, vnode.el) // Recursively mount the children
     })
   }
 
-  el.appendChild(vnodeEl);
+  el.appendChild(vnode.el);
 }
+
+function unmount(vnode) {
+  vnode.el.parentNode.removeChild(vnode.el);
+}
+
+function patch(currentNode, newNode) {
+  newNode.el = currentNode.el;
+  // Case that the nodes are different tag
+  if(currentNode.tag != newNode.tag){
+    mount(newNode, newNode.el.parentNode);
+    unmount(currentNode);
+  }
+
+  // Case that the nodes are same tag
+  else {
+    if (typeof newNode.children == 'string') {
+      newNode.el.textContent = newNode.children;
+    }
+
+    else {
+      if (typeof currentNode.children == 'string') {
+        newNode.el.textContent = '';
+        newNode.children.forEach((child) => mount(child, newNode.el));
+      }
+
+      else {
+        const commonLength = Math.min(currentNode.children.length, newNode.children.length)
+
+        for(let i = 0; i< commonLength; i++) {
+          patch(currentNode.children[i], newNode.children[i]);
+        }
+
+        if (currentNode.children.length > newNode.children.length) {
+          currentNode.children.slice(newNode.children.length).forEach((child) => {
+            unmount(child);
+          });
+        }
+
+        else if (currentNode.children.length < newNode.children.length) {
+          newNode.children.slice(currentNode.children.length).forEach((child) => {
+            mount(child, newNode.el);
+          });
+        }
+      }
+    }
+  }
+}
+
+var newVnode = {
+  tag: 'div',
+  props: {
+    class: 'container'
+  },
+  children: [childNode, childNode2, childNode3]
+};
+
+setTimeout(() => {
+  patch(vnode, newVnode);
+}, 3000)
