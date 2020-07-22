@@ -1,34 +1,64 @@
-var childNode = {
-  tag: 'h1',
-  props: {
-    class: 'title'
-  },
-  children: 'hello world'
+let subscribers = new Set()
+
+const state = {
+  point: 1,
+  name: 'taiyop'
 };
 
-var childNode2 = {
-  tag: 'span',
-  props: null,
-  children: 'I am taiyop'
-};
+function render() {
+  let childNode = {
+    tag: 'h1',
+    props: {
+      class: 'title'
+    },
+    children: 'hello world'
+  };
 
-var childNode3 = {
-  tag: 'p',
-  props: null,
-  children: 'Thank you for your time!'
-};
+  let childNode2 = {
+    tag: 'span',
+    props: null,
+    children: `I am ${state.name}`
+  };
 
-var vnode = {
-  tag: 'div',
-  props: {
-    class: 'container'
-  },
-  children: [childNode, childNode2]
-};
+  let stateVnode = {
+    tag: 'p',
+    props: null,
+    children: `${state.name} got ${state.point} point`
+  };
 
-var vueEl = document.getElementById('app');
+  let vnode = {
+    tag: 'div',
+    props: {
+      class: 'container'
+    },
+    children: [childNode, childNode2, stateVnode]
+  };
 
-mount(vnode, vueEl);
+  return vnode;
+}
+
+let currentVnode
+const action = () => {
+  let newVnode = render();
+
+  patch(currentVnode, newVnode);
+  currentVnode = newVnode;
+}
+Object.keys(state).forEach((key) => {
+  let value = state[key];
+  Object.defineProperty(state, key, {
+    get() {
+      subscribers.add(action)
+      return value
+    },
+    set(newValue) {
+      if(newValue !== value){
+        value = newValue
+        subscribers.forEach((sub) => sub())
+      }
+    }
+  });
+});
 
 function mount(vnode, el) {
   vnode.el = document.createElement(vnode.tag);
@@ -93,14 +123,8 @@ function patch(currentNode, newNode) {
   }
 }
 
-var newVnode = {
-  tag: 'div',
-  props: {
-    class: 'container'
-  },
-  children: [childNode, childNode2, childNode3]
-};
+let vueEl = document.getElementById('app');
 
-setTimeout(() => {
-  patch(vnode, newVnode);
-}, 3000)
+currentVnode = render();
+
+mount(currentVnode, vueEl);
