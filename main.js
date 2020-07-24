@@ -4,6 +4,32 @@ const state = {
   point: 1,
   name: 'taiyop'
 };
+let currentVnode
+const action = () => {
+  let newVnode = render();
+
+  patch(currentVnode, newVnode);
+  currentVnode = newVnode;
+}
+
+function reactive(state) {
+  Object.keys(state).forEach((key) => {
+    let value = state[key];
+    Object.defineProperty(state, key, {
+      get() {
+        subscribers.add(action)
+        return value
+      },
+      set(newValue) {
+        if(newValue !== value){
+          value = newValue
+          subscribers.forEach((sub) => sub())
+        }
+      }
+    });
+  });
+}
+reactive(state);
 
 function render() {
   let childNode = {
@@ -37,28 +63,6 @@ function render() {
   return vnode;
 }
 
-let currentVnode
-const action = () => {
-  let newVnode = render();
-
-  patch(currentVnode, newVnode);
-  currentVnode = newVnode;
-}
-Object.keys(state).forEach((key) => {
-  let value = state[key];
-  Object.defineProperty(state, key, {
-    get() {
-      subscribers.add(action)
-      return value
-    },
-    set(newValue) {
-      if(newValue !== value){
-        value = newValue
-        subscribers.forEach((sub) => sub())
-      }
-    }
-  });
-});
 
 function mount(vnode, el) {
   vnode.el = document.createElement(vnode.tag);
@@ -127,4 +131,8 @@ let vueEl = document.getElementById('app');
 
 currentVnode = render();
 
-mount(currentVnode, vueEl);
+/*
+ * このタイミングでstate.countなどがgetされて、
+ * subscribersに登録、setしたときに実行される
+ */
+mount(currentVnode, vueEl); 
