@@ -31,7 +31,28 @@ function reactive(state) {
 }
 reactive(state);
 
-function render() {
+
+function h(tag, props, children) {
+  return {
+    tag,
+    props,
+    children
+  }
+}
+
+const renderFn = `
+  return function render() {
+    let vnode = h('div', { class: 'container' }, [
+      h('h1', { class: 'title' }, 'hello world'),
+      h('span', null, 'I am ' + state.name ),
+      h('p', null, state.name + ' got ' + state.point + 'point')
+    ]);
+
+    return vnode;
+  }
+`
+
+function render(context) {
   let childNode = {
     tag: 'h1',
     props: {
@@ -129,10 +150,11 @@ function patch(currentNode, newNode) {
 
 let vueEl = document.getElementById('app');
 
-currentVnode = render();
+const newRender = new Function(renderFn)();
+currentVnode = newRender();
 
 /*
  * このタイミングでstate.countなどがgetされて、
  * subscribersに登録、setしたときに実行される
  */
-mount(currentVnode, vueEl); 
+mount(currentVnode, vueEl);
