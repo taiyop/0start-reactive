@@ -1,13 +1,31 @@
 'use strict';
 
+var currentVnode;
+var setCurrentVnode = function (node) {
+    currentVnode = node;
+};
+var getCurrentVnode = function () {
+    return currentVnode;
+};
+
 // export const h = function(tag, props, children) {
-//   return {
-//     tag,
-//     props,
-//     children
-//   }
-// }
-var mount = function (vnode, el) {
+var createAppAPI = function (render) {
+    return function createApp(config) {
+        return {
+            render: render,
+            mount: function (elName) {
+                var vueEl = document.getElementById(elName);
+                setCurrentVnode(render());
+                /*
+                 * このタイミングでstate.countなどがgetされて、
+                 * subscribersに登録、setしたときに実行される
+                 */
+                mountChildren(getCurrentVnode(), vueEl);
+            }
+        };
+    };
+};
+var mountChildren = function (vnode, el) {
     vnode.el = document.createElement(vnode.tag);
     for (var key in vnode.props) {
         vnode.el.setAttribute(key, vnode.props[key]);
@@ -17,7 +35,7 @@ var mount = function (vnode, el) {
     }
     else {
         vnode.children.forEach(function (child) {
-            mount(child, vnode.el); // Recursively mount the children
+            mountChildren(child, vnode.el); // Recursively mount the children
         });
     }
     el.appendChild(vnode.el);
@@ -30,7 +48,7 @@ var patch = function (currentNode, newNode) {
     newNode.el = currentNode.el;
     // Case that the nodes are different tag
     if (currentNode.tag != newNode.tag) {
-        mount(newNode, newNode.el.parentNode);
+        mountChildren(newNode, newNode.el.parentNode);
         unmount(currentNode);
     }
     // Case that the nodes are same tag
@@ -41,7 +59,7 @@ var patch = function (currentNode, newNode) {
         else {
             if (typeof currentNode.children == 'string') {
                 newNode.el.textContent = '';
-                newNode.children.forEach(function (child) { return mount(child, newNode.el); });
+                newNode.children.forEach(function (child) { return mountChildren(child, newNode.el); });
             }
             else {
                 var commonLength = Math.min(currentNode.children.length, newNode.children.length);
@@ -55,7 +73,7 @@ var patch = function (currentNode, newNode) {
                 }
                 else if (currentNode.children.length < newNode.children.length) {
                     newNode.children.slice(currentNode.children.length).forEach(function (child) {
-                        mount(child, newNode.el);
+                        mountChildren(child, newNode.el);
                     });
                 }
             }
@@ -63,37 +81,30 @@ var patch = function (currentNode, newNode) {
     }
 };
 
+// function parse(string) {
+//   const delimiters = ['{{', '}}'];
+//   string.indexOf(delimiters[1])
+// }
 var compile = function (template) {
     var renderFn = "\n    const h = function(tag, props, children) {\n      return {\n        tag,\n        props,\n        children\n      }\n    }\n    \n    return function render() {\n      let vnode = h('div', { class: 'container' }, [\n        h('h1', { class: 'title' }, 'hello world'),\n        h('span', null, 'I am ' + state.name ),\n        h('p', null, state.name + ' got ' + state.point + ' point')\n      ]);\n\n      return vnode;\n    }\n  ";
     return renderFn;
 };
 
-var currentVnode;
-var setCurrentVnode = function (node) {
-    currentVnode = node;
-};
-var getCurrentVnode = function () {
-    return currentVnode;
-};
-
 var subscribers = new Set();
-var state = {
-    point: 1,
-    name: 'taiyop'
-};
-var renderFn = compile();
-var newRender = new Function(renderFn)();
-var action = function () {
-    var newVnode = newRender();
-    patch(getCurrentVnode(), newVnode);
-    setCurrentVnode(newVnode);
+var activeEffect = null;
+var watchEffect = function (effect) {
+    activeEffect = effect;
+    effect();
+    activeEffect = null;
 };
 function reactive(state) {
     Object.keys(state).forEach(function (key) {
         var value = state[key];
         Object.defineProperty(state, key, {
             get: function () {
-                subscribers.add(action);
+                if (activeEffect) {
+                    subscribers.add(activeEffect);
+                }
                 return value;
             },
             set: function (newValue) {
@@ -105,11 +116,27 @@ function reactive(state) {
         });
     });
 }
-reactive(state);
-var vueEl = document.getElementById('app');
-setCurrentVnode(newRender());
+
+var state = {
+    point: 1,
+    name: 'taiyop'
+};
+var renderFn = compile();
+var newRender = new Function(renderFn)();
+// let vueEl = document.getElementById('app');
+// setCurrentVnode(newRender());
 /*
  * このタイミングでstate.countなどがgetされて、
  * subscribersに登録、setしたときに実行される
  */
-mount(getCurrentVnode(), vueEl);
+var createApp = createAppAPI(newRender);
+createApp({}).mount('app');
+// reactive登録
+reactive(state);
+// 更新処理
+var action = function () {
+    var newVnode = newRender();
+    patch(getCurrentVnode(), newVnode);
+    setCurrentVnode(newVnode);
+};
+watchEffect(action);

@@ -1,8 +1,9 @@
 import { patch } from './renderer'
-import { mount } from './createApp'
+import { createAppAPI } from './createApp'
 import { compile } from './compiler'
+import { setCurrentVnode, getCurrentVnode } from "./vnode";
+import { reactive, watchEffect } from './reactive'
 
-let subscribers = new Set()
 
 const state = {
   point: 1,
@@ -19,8 +20,19 @@ const template = `
 const renderFn = compile(template)
 const newRender = new Function(renderFn)();
 
-import { setCurrentVnode, getCurrentVnode } from "./vnode";
 
+// let vueEl = document.getElementById('app');
+// setCurrentVnode(newRender());
+/*
+ * このタイミングでstate.countなどがgetされて、
+ * subscribersに登録、setしたときに実行される
+ */
+let createApp =  createAppAPI(newRender)
+createApp({}).mount('app');
+
+// reactive登録
+reactive(state);
+// 更新処理
 const action = () => {
   let newVnode = newRender();
 
@@ -28,37 +40,5 @@ const action = () => {
   setCurrentVnode(newVnode);
 }
 
-function reactive(state) {
-  Object.keys(state).forEach((key) => {
-    let value = state[key];
-    Object.defineProperty(state, key, {
-      get() {
-        subscribers.add(action)
-        return value
-      },
-      set(newValue) {
-        if(newValue !== value){
-          value = newValue
-          subscribers.forEach((sub: any) => sub())
-        }
-      }
-    });
-  });
-}
-reactive(state);
+watchEffect(action)
 
-function parse(string) {
-  const delimiters = ['{{', '}}'];
-  string.indexOf(delimiters[1])
-}
-
-
-let vueEl = document.getElementById('app');
-
-setCurrentVnode(newRender());
-
-/*
- * このタイミングでstate.countなどがgetされて、
- * subscribersに登録、setしたときに実行される
- */
-mount(getCurrentVnode(), vueEl);

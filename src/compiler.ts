@@ -1,3 +1,8 @@
+// function parse(string) {
+//   const delimiters = ['{{', '}}'];
+//   string.indexOf(delimiters[1])
+// }
+
 export const compile = function(template) {
   const renderFn = `
     const h = function(tag, props, children) {

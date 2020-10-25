@@ -1,10 +1,10 @@
-import { mount, unmount } from './createApp'
+import { mountChildren, unmount } from './createApp'
 
 export const patch = function(currentNode, newNode) {
   newNode.el = currentNode.el;
   // Case that the nodes are different tag
   if(currentNode.tag != newNode.tag){
-    mount(newNode, newNode.el.parentNode);
+    mountChildren(newNode, newNode.el.parentNode);
     unmount(currentNode);
   }
 
@@ -17,7 +17,7 @@ export const patch = function(currentNode, newNode) {
     else {
       if (typeof currentNode.children == 'string') {
         newNode.el.textContent = '';
-        newNode.children.forEach((child) => mount(child, newNode.el));
+        newNode.children.forEach((child) => mountChildren(child, newNode.el));
       }
 
       else {
@@ -35,7 +35,7 @@ export const patch = function(currentNode, newNode) {
 
         else if (currentNode.children.length < newNode.children.length) {
           newNode.children.slice(currentNode.children.length).forEach((child) => {
-            mount(child, newNode.el);
+            mountChildren(child, newNode.el);
           });
         }
       }
