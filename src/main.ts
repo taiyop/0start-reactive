@@ -1,5 +1,6 @@
 import { patch } from './renderer'
 import { mount } from './createApp'
+import { compile } from './compiler'
 
 let subscribers = new Set()
 
@@ -8,26 +9,14 @@ const state = {
   name: 'taiyop'
 };
 
-const renderFn = `
-  const h = function(tag, props, children) {
-    return {
-      tag,
-      props,
-      children
-    }
-  }
-  
-  return function render() {
-    let vnode = h('div', { class: 'container' }, [
-      h('h1', { class: 'title' }, 'hello world'),
-      h('span', null, 'I am ' + state.name ),
-      h('p', null, state.name + ' got ' + state.point + ' point')
-    ]);
-
-    return vnode;
-  }
+const template = `
+<div class="container">
+  <h1 class="title">hello world</h1>
+  <span>I am {{ state.name }}</span>
+  <p>{{ state.name }} got {{ state.point }} point</p>
 `
 
+const renderFn = compile(template)
 const newRender = new Function(renderFn)();
 
 import { setCurrentVnode, getCurrentVnode } from "./vnode";
@@ -57,13 +46,6 @@ function reactive(state) {
   });
 }
 reactive(state);
-
-const template = `
-<div class="container">
-  <h1 class="title">hello world</h1>
-  <span>I am {{ state.name }}</span>
-  <p>{{ state.name }} got {{ state.point }} point</p>
-`
 
 function parse(string) {
   const delimiters = ['{{', '}}'];

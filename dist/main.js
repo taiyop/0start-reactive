@@ -63,6 +63,11 @@ var patch = function (currentNode, newNode) {
     }
 };
 
+var compile = function (template) {
+    var renderFn = "\n    const h = function(tag, props, children) {\n      return {\n        tag,\n        props,\n        children\n      }\n    }\n    \n    return function render() {\n      let vnode = h('div', { class: 'container' }, [\n        h('h1', { class: 'title' }, 'hello world'),\n        h('span', null, 'I am ' + state.name ),\n        h('p', null, state.name + ' got ' + state.point + ' point')\n      ]);\n\n      return vnode;\n    }\n  ";
+    return renderFn;
+};
+
 var currentVnode;
 var setCurrentVnode = function (node) {
     currentVnode = node;
@@ -76,7 +81,7 @@ var state = {
     point: 1,
     name: 'taiyop'
 };
-var renderFn = "\n  const h = function(tag, props, children) {\n    return {\n      tag,\n      props,\n      children\n    }\n  }\n  \n  return function render() {\n    let vnode = h('div', { class: 'container' }, [\n      h('h1', { class: 'title' }, 'hello world'),\n      h('span', null, 'I am ' + state.name ),\n      h('p', null, state.name + ' got ' + state.point + ' point')\n    ]);\n\n    return vnode;\n  }\n";
+var renderFn = compile();
 var newRender = new Function(renderFn)();
 var action = function () {
     var newVnode = newRender();
